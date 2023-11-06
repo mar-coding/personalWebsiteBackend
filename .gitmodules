@@ -1,0 +1,9 @@
+[submodule "APIs/proto/includes/googleapis"]
+	path = APIs/proto/includes/googleapis
+	url = https://github.com/googleapis/googleapis.git
+[submodule "APIs/proto/APIs/proto/includes/gateway"]
+	path = APIs/proto/APIs/proto/includes/gateway
+	url = https://github.com/grpc-ecosystem/grpc-gateway.git
+[submodule "APIs/proto/APIs/proto/includes/validator"]
+	path = APIs/proto/APIs/proto/includes/validator
+	url = https://github.com/bufbuild/protoc-gen-validate.git

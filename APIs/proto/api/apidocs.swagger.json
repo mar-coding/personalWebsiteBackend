@@ -1,0 +1,177 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Website Service",
+    "version": "1.0",
+    "contact": {
+      "name": "amnrah",
+      "url": "127.0.0.1",
+      "email": "test@test.com"
+    }
+  },
+  "tags": [
+    {
+      "name": "WebService"
+    }
+  ],
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/testGet": {
+      "get": {
+        "summary": "This is API to test Get method",
+        "description": "| Field ID    | Name      | Type                                                       | Required                  |\n| ----------- | --------- | ---------------------------------------------------------  | ---------------------------- | \n| 1 | names | []TYPE_STRING | required |",
+        "operationId": "WebService_TestGetAPI",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TestGetAPIResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "names",
+            "description": "required",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "WebService"
+        ]
+      }
+    },
+    "/testPost/{name}": {
+      "post": {
+        "summary": "This is API to test Post method",
+        "description": "| Field ID    | Name      | Type                                                       | Required                  |\n| ----------- | --------- | ---------------------------------------------------------  | ---------------------------- | \n| 1 | age | TYPE_INT32 | required | \n| 2 | name | TYPE_STRING | required |",
+        "operationId": "WebService_TestPostAPI",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TestPostAPIResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "name",
+            "description": "required",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "age": {
+                  "type": "integer",
+                  "format": "int32",
+                  "title": "required"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "WebService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1TestGetAPIResponse": {
+      "type": "object",
+      "properties": {
+        "output": {
+          "type": "string"
+        },
+        "numberOfNames": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1TestPostAPIResponse": {
+      "type": "object",
+      "properties": {
+        "output": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Authentication token with prefixed Bearer",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

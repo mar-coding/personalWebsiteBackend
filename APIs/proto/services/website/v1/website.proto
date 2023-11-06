@@ -1,0 +1,126 @@
+syntax = "proto3";
+package services.website.v1;
+option go_package = "github.com/mar-coding/personalWebsiteBackend/APIs/proto-gen/services/website/v1;website";
+
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/descriptor.proto";
+import "googleapis/google/api/annotations.proto";
+import "validate/validate.proto";
+
+
+// Service Information
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Website Service";
+    version: "1.0";
+    contact: {
+      name: "amnrah";
+      url: "127.0.0.1";
+      email: "test@test.com";
+    };
+  };
+  security_definitions: {
+    security: {
+      key: "bearer"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "Authentication token with prefixed Bearer"
+      }
+    }
+  }
+  security: {
+    security_requirement: {
+      key: "bearer"
+    }
+  }
+
+  schemes: HTTPS;
+  schemes: HTTP;
+  consumes: "application/json";
+  produces: "application/json";
+};
+
+// =============== service permissions ===============
+
+extend google.protobuf.MethodOptions {
+  Permission permission = 1000000;
+}
+
+message Permission {
+  repeated Permissions permissions = 1;
+  bool optional = 2;
+  bool validate_permissions = 3;
+  bool captcha = 4;
+}
+
+enum Permissions {
+  NONE = 0;
+  CREATE_POST = 1;
+}
+
+service WebService {
+  // TestPostAPI
+  //
+  // | Field ID    | Name      | Type                                                       | Required                  |
+  // | ----------- | --------- | ---------------------------------------------------------  | ---------------------------- | {{range .RequestType.Fields}}
+  // | {{.Number}} | {{.Name}} | {{if eq .Label.String "LABEL_REPEATED"}}[]{{end}}{{.Type}} | {{fieldcomments .Message .}} | {{end}}
+  rpc TestPostAPI(TestPostAPIRequest) returns(TestPostAPIResponse) {
+    option(google.api.http) = {
+      post: "/testPost/{name}"
+      body: "*"
+    };
+    option(permission) = {
+      permissions: NONE,
+      optional: false,
+      validate_permissions: false,
+      captcha: false
+    };
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "This is API to test Post method",
+    };
+  }
+
+  // TestGetAPI
+  //
+  // | Field ID    | Name      | Type                                                       | Required                  |
+  // | ----------- | --------- | ---------------------------------------------------------  | ---------------------------- | {{range .RequestType.Fields}}
+  // | {{.Number}} | {{.Name}} | {{if eq .Label.String "LABEL_REPEATED"}}[]{{end}}{{.Type}} | {{fieldcomments .Message .}} | {{end}}
+  rpc TestGetAPI(TestGetAPIRequest) returns(TestGetAPIResponse) {
+    option(google.api.http) = {
+      get: "/testGet"
+    };
+    option(permission) = {
+      permissions: NONE,
+      validate_permissions: false,
+      optional: false,
+      captcha: false
+    };
+    option(grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "This is API to test Get method",
+    };
+  }
+}
+
+message TestPostAPIRequest{
+  // required
+  int32 age = 1 [(validate.rules).int32.gt = 10];
+  // required
+  string name = 2 [(validate.rules).string.not_in = ""];
+
+}
+
+message TestPostAPIResponse{
+  string output = 1;
+}
+
+message TestGetAPIRequest{
+  // required
+  repeated string names = 1;
+}
+
+message TestGetAPIResponse{
+  string output = 1;
+  int32 number_of_names = 2;
+}
