@@ -1,0 +1,9 @@
+address: "0.0.0.0"
+domain: ""
+development: true
+
+grpc:
+  port: 9000
+
+rest:
+  port: 8000
