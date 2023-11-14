@@ -7,3 +7,6 @@ grpc:
 
 rest:
   port: 8000
+
+extra_data:
+  email: "this@is.test"
