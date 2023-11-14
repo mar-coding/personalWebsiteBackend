@@ -10,6 +10,16 @@ type MyConfig struct {
 	Bar    string `yaml:"bar" json:"bar"`
 }
 
+type Company struct {
+	Name  string
+	Phone string
+}
+type Person struct {
+	Name    string
+	Age     int64
+	Company Company
+}
+
 func TestYAMLUnmarshaler_Unmarshal(t *testing.T) {
 	yamlData := []byte(`
 foo_bar: test
@@ -27,6 +37,36 @@ bar: 123
 	expectedConfig := &MyConfig{
 		FooBar: "test",
 		Bar:    "123",
+	}
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedConfig, config)
+}
+
+func TestTomlUnmarshaler_Unmarshal(t *testing.T) {
+	tomlData := []byte(`
+	name = "John Doe"
+	age = 42
+	[company]
+		name = "Company"
+		phone = "+1 9123456789"
+	`)
+
+	config := &Person{}
+	unmarshaler := &tomlUnmarshaler{}
+
+	err := unmarshaler.Unmarshal(tomlData, config)
+	if err != nil {
+		t.Errorf("Failed to unmarshal YAML: %s", err)
+	}
+
+	expectedConfig := &Person{
+		Name: "John Doe",
+		Age:  42,
+		Company: Company{
+			Name:  "Company",
+			Phone: "+1 9123456789",
+		},
 	}
 
 	assert.NoError(t, err)
@@ -62,6 +102,14 @@ func TestCreateUnmarshaler(t *testing.T) {
 		unmarshaler, err := CreateUnmarshaler(path)
 		assert.NoError(t, err)
 		assert.IsType(t, &jsonUnmarshaler{}, unmarshaler)
+	})
+
+	t.Run("TOML extension", func(t *testing.T) {
+		path := "/path/to/file.toml"
+
+		unmarshaler, err := CreateUnmarshaler(path)
+		assert.NoError(t, err)
+		assert.IsType(t, &tomlUnmarshaler{}, unmarshaler)
 	})
 
 	t.Run("YAML extension", func(t *testing.T) {
