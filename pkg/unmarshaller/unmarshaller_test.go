@@ -1,4 +1,4 @@
-package unmarshaler
+package unmarshaller
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -20,16 +20,16 @@ type Person struct {
 	Company Company
 }
 
-func TestYAMLUnmarshaler_Unmarshal(t *testing.T) {
+func TestYAMLUnmarshaller_Unmarshal(t *testing.T) {
 	yamlData := []byte(`
 foo_bar: test
 bar: 123
 `)
 
 	config := &MyConfig{}
-	unmarshaler := &yamlUnmarshaler{}
+	unmarshaller := &yamlUnmarshaller{}
 
-	err := unmarshaler.Unmarshal(yamlData, config)
+	err := unmarshaller.Unmarshal(yamlData, config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal YAML: %s", err)
 	}
@@ -43,7 +43,7 @@ bar: 123
 	assert.Equal(t, expectedConfig, config)
 }
 
-func TestTomlUnmarshaler_Unmarshal(t *testing.T) {
+func TestTomlUnmarshaller_Unmarshal(t *testing.T) {
 	tomlData := []byte(`
 	name = "John Doe"
 	age = 42
@@ -53,9 +53,9 @@ func TestTomlUnmarshaler_Unmarshal(t *testing.T) {
 	`)
 
 	config := &Person{}
-	unmarshaler := &tomlUnmarshaler{}
+	unmarshaller := &tomlUnmarshaller{}
 
-	err := unmarshaler.Unmarshal(tomlData, config)
+	err := unmarshaller.Unmarshal(tomlData, config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal YAML: %s", err)
 	}
@@ -73,7 +73,7 @@ func TestTomlUnmarshaler_Unmarshal(t *testing.T) {
 	assert.Equal(t, expectedConfig, config)
 }
 
-func TestJSONUnmarshaler_Unmarshal(t *testing.T) {
+func TestJSONUnmarshaller_Unmarshal(t *testing.T) {
 	jsonData := []byte(`
 		{ "foo_bar": "test","bar":"123" }
 	`)
@@ -84,9 +84,9 @@ func TestJSONUnmarshaler_Unmarshal(t *testing.T) {
 	}
 
 	config := &MyConfig{}
-	unmarshaler := &jsonUnmarshaler{}
+	unmarshaller := &jsonUnmarshaller{}
 
-	err := unmarshaler.Unmarshal(jsonData, config)
+	err := unmarshaller.Unmarshal(jsonData, config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal JSON: %s", err)
 	}
@@ -95,36 +95,36 @@ func TestJSONUnmarshaler_Unmarshal(t *testing.T) {
 	assert.Equal(t, expectedConfig, config)
 }
 
-func TestCreateUnmarshaler(t *testing.T) {
+func TestCreateUnmarshaller(t *testing.T) {
 	t.Run("JSON extension", func(t *testing.T) {
 		path := "/path/to/file.json"
 
-		unmarshaler, err := CreateUnmarshaler(path)
+		unmarshaller, err := CreateUnmarshaller(path)
 		assert.NoError(t, err)
-		assert.IsType(t, &jsonUnmarshaler{}, unmarshaler)
+		assert.IsType(t, &jsonUnmarshaller{}, unmarshaller)
 	})
 
 	t.Run("TOML extension", func(t *testing.T) {
 		path := "/path/to/file.toml"
 
-		unmarshaler, err := CreateUnmarshaler(path)
+		unmarshaller, err := CreateUnmarshaller(path)
 		assert.NoError(t, err)
-		assert.IsType(t, &tomlUnmarshaler{}, unmarshaler)
+		assert.IsType(t, &tomlUnmarshaller{}, unmarshaller)
 	})
 
 	t.Run("YAML extension", func(t *testing.T) {
 		path := "/path/to/file.yaml"
 
-		unmarshaler, err := CreateUnmarshaler(path)
+		unmarshaller, err := CreateUnmarshaller(path)
 		assert.NoError(t, err)
-		assert.IsType(t, &yamlUnmarshaler{}, unmarshaler)
+		assert.IsType(t, &yamlUnmarshaller{}, unmarshaller)
 	})
 
 	t.Run("Unsupported extension", func(t *testing.T) {
 		path := "/path/to/file.txt"
 
-		unmarshaler, err := CreateUnmarshaler(path)
+		unmarshaller, err := CreateUnmarshaller(path)
 		assert.Error(t, err)
-		assert.Nil(t, unmarshaler)
+		assert.Nil(t, unmarshaller)
 	})
 }

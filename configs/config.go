@@ -2,7 +2,7 @@ package configs
 
 import (
 	"fmt"
-	"github.com/mar-coding/personalWebsiteBackend/pkg/unmarshaler"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/unmarshaller"
 	"os"
 )
 
@@ -13,7 +13,7 @@ func NewConfig(configPath string) (*Config, error) {
 		return nil, msg
 	}
 
-	unMarshaler, err := unmarshaler.CreateUnmarshaler(configPath)
+	unMarshaler, err := unmarshaller.CreateUnmarshaller(configPath)
 	config := &Config{}
 	err = unMarshaler.Unmarshal(b, config)
 	if err != nil {

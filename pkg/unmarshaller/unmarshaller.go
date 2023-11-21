@@ -1,4 +1,4 @@
-package unmarshaler
+package unmarshaller
 
 import (
 	"encoding/json"
@@ -17,47 +17,47 @@ const (
 	TOML Extension = ".toml"
 )
 
-type Unmarshaler interface {
+type Unmarshaller interface {
 	Unmarshal(payload []byte, config interface{}) error
 }
 
-type jsonUnmarshaler struct{}
+type jsonUnmarshaller struct{}
 
-type yamlUnmarshaler struct{}
+type yamlUnmarshaller struct{}
 
-type tomlUnmarshaler struct{}
+type tomlUnmarshaller struct{}
 
-func (u yamlUnmarshaler) Unmarshal(payload []byte, config interface{}) error {
+func (u yamlUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
 	if err := yaml.Unmarshal(payload, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u jsonUnmarshaler) Unmarshal(payload []byte, config interface{}) error {
+func (u jsonUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
 	if err := json.Unmarshal(payload, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u tomlUnmarshaler) Unmarshal(payload []byte, config interface{}) error {
+func (u tomlUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
 	if err := toml.Unmarshal(payload, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-// CreateUnmarshaler FactoryPattern function to create the appropriate Unmarshaler based on the file extension
-func CreateUnmarshaler(path string) (Unmarshaler, error) {
+// CreateUnmarshaller FactoryPattern function to create the appropriate Unmarshaller based on the file extension
+func CreateUnmarshaller(path string) (Unmarshaller, error) {
 	ext := filepath.Ext(path)
 	switch Extension(ext) {
 	case JSON:
-		return &jsonUnmarshaler{}, nil
+		return &jsonUnmarshaller{}, nil
 	case YAML, YML:
-		return &yamlUnmarshaler{}, nil
+		return &yamlUnmarshaller{}, nil
 	case TOML:
-		return &tomlUnmarshaler{}, nil
+		return &tomlUnmarshaller{}, nil
 	default:
 		return nil, errors.New("unsupported file extension")
 	}
