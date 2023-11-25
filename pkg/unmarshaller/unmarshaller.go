@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/pelletier/go-toml"
 	"gopkg.in/yaml.v3"
+	"os"
 	"path/filepath"
 )
 
@@ -18,46 +19,62 @@ const (
 )
 
 type Unmarshaller interface {
-	Unmarshal(payload []byte, config interface{}) error
+	Unmarshal(config interface{}) error
 }
 
-type jsonUnmarshaller struct{}
+type jsonUnmarshaller struct {
+	Data []byte
+}
 
-type yamlUnmarshaller struct{}
+type tomlUnmarshaller struct {
+	Data []byte
+}
 
-type tomlUnmarshaller struct{}
+type yamlUnmarshaller struct {
+	Data []byte
+}
 
-func (u yamlUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
-	if err := yaml.Unmarshal(payload, config); err != nil {
+func (y *yamlUnmarshaller) Unmarshal(config interface{}) error {
+	if err := yaml.Unmarshal(y.Data, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u jsonUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
-	if err := json.Unmarshal(payload, config); err != nil {
+func (j *jsonUnmarshaller) Unmarshal(config interface{}) error {
+	if err := json.Unmarshal(j.Data, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u tomlUnmarshaller) Unmarshal(payload []byte, config interface{}) error {
-	if err := toml.Unmarshal(payload, config); err != nil {
+func (t *tomlUnmarshaller) Unmarshal(config interface{}) error {
+	if err := toml.Unmarshal(t.Data, config); err != nil {
 		return err
 	}
 	return nil
 }
 
-// CreateUnmarshaller FactoryPattern function to create the appropriate Unmarshaller based on the file extension
-func CreateUnmarshaller(path string) (Unmarshaller, error) {
+// NewUnmarshaller FactoryPattern function to create the appropriate Unmarshaller based on the file extension
+func NewUnmarshaller(path string) (Unmarshaller, error) {
 	ext := filepath.Ext(path)
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
 	switch Extension(ext) {
 	case JSON:
-		return &jsonUnmarshaller{}, nil
-	case YAML, YML:
-		return &yamlUnmarshaller{}, nil
+		return &jsonUnmarshaller{
+			Data: payload,
+		}, nil
 	case TOML:
-		return &tomlUnmarshaller{}, nil
+		return &tomlUnmarshaller{
+			Data: payload,
+		}, nil
+	case YAML, YML:
+		return &yamlUnmarshaller{
+			Data: payload,
+		}, nil
 	default:
 		return nil, errors.New("unsupported file extension")
 	}

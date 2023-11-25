@@ -1,0 +1,106 @@
+{
+  "development": true,
+  "address": "0.0.0.0",
+  "domain": "https://api.example.com",
+  "socket_file_path": "/tmp/service.sock",
+  "origins": [
+    "domain1.com",
+    "domain2.com"
+  ],
+  "grpc": {
+    "port": 8000,
+    "cert_file_path": "grpc/cert/server.pem",
+    "cert_key_file_path": "grpc/cert/key.pem"
+  },
+  "rest": {
+    "port": 9000,
+    "cert_file_path": "rest/cert/server.pem",
+    "cert_key_file_path": "rest/cert/key.pem"
+  },
+  "websocket": {
+    "port": 10000,
+    "cert_file_path": "websocket/cert/server.pem",
+    "cert_key_file_path": "websocket/cert/key.pem"
+  },
+  "graphql": {
+    "port": 11000
+  },
+  "grpc_clients": [
+    {
+      "name": "service A",
+      "address": "1.2.3.4",
+      "port": 8888,
+      "socket_file_path": "/tmp/service.sock",
+      "cert_ca_file_path": "cert/clientCA1.pem"
+    },
+    {
+      "name": "service B",
+      "address": "1.2.3.5",
+      "port": 7777,
+      "socket_file_path": "/tmp/service.sock",
+      "cert_ca_file_path": "cert/clientCA2.pem"
+    }
+  ],
+  "database": {
+    "mongodb": {
+      "uri": "uri",
+      "database_name": "db_name"
+    },
+    "mysql": {
+      "uri": "uri",
+      "database_name": "db_name"
+    },
+    "postgres": {
+      "uri": "uri",
+      "database_name": "db_name"
+    },
+    "redis": {
+      "address": "localhost:6379",
+      "username": "user",
+      "password": "pass",
+      "database": 0
+    },
+    "elastic": {
+      "addresses": [
+        "https://localhost:9002",
+        "https://localhost:9003"
+      ],
+      "username": "elastic",
+      "password": "abcdefgh"
+    }
+  },
+  "broker": {
+    "nats": {
+      "address": "1.2.3.4:4222",
+      "username": "foo",
+      "password": "bar"
+    },
+    "rabbitmq": {
+      "uri": "foobar"
+    }
+  },
+  "logger": {
+    "console_writer": true,
+    "colorable_console": true,
+    "json_writer": true,
+    "json_extension": ".json",
+    "file_writer": true,
+    "log_path": "/tmp",
+    "file_rotation": {
+      "max_age": 5,
+      "file_size": 10,
+      "compress": false
+    },
+    "sentry_dsn": "dsn"
+  },
+  "logging": {
+    "debug": true,
+    "handler": 0,
+    "enable_caller": true,
+    "sentry_dsn": "dsn"
+  },
+  "extra_data": {
+    "foo": "bar",
+    "bar": 1234
+  }
+}

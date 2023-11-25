@@ -27,9 +27,9 @@ bar: 123
 `)
 
 	config := &MyConfig{}
-	unmarshaller := &yamlUnmarshaller{}
+	unmarshaller := &yamlUnmarshaller{Data: yamlData}
 
-	err := unmarshaller.Unmarshal(yamlData, config)
+	err := unmarshaller.Unmarshal(config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal YAML: %s", err)
 	}
@@ -53,9 +53,9 @@ func TestTomlUnmarshaller_Unmarshal(t *testing.T) {
 	`)
 
 	config := &Person{}
-	unmarshaller := &tomlUnmarshaller{}
+	unmarshaller := &tomlUnmarshaller{Data: tomlData}
 
-	err := unmarshaller.Unmarshal(tomlData, config)
+	err := unmarshaller.Unmarshal(config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal YAML: %s", err)
 	}
@@ -84,9 +84,9 @@ func TestJSONUnmarshaller_Unmarshal(t *testing.T) {
 	}
 
 	config := &MyConfig{}
-	unmarshaller := &jsonUnmarshaller{}
+	unmarshaller := &jsonUnmarshaller{Data: jsonData}
 
-	err := unmarshaller.Unmarshal(jsonData, config)
+	err := unmarshaller.Unmarshal(config)
 	if err != nil {
 		t.Errorf("Failed to unmarshal JSON: %s", err)
 	}
@@ -97,25 +97,25 @@ func TestJSONUnmarshaller_Unmarshal(t *testing.T) {
 
 func TestCreateUnmarshaller(t *testing.T) {
 	t.Run("JSON extension", func(t *testing.T) {
-		path := "/path/to/file.json"
+		path := "./testdata/test.json"
 
-		unmarshaller, err := CreateUnmarshaller(path)
+		unmarshaller, err := NewUnmarshaller(path)
 		assert.NoError(t, err)
 		assert.IsType(t, &jsonUnmarshaller{}, unmarshaller)
 	})
 
 	t.Run("TOML extension", func(t *testing.T) {
-		path := "/path/to/file.toml"
+		path := "./testdata/test.toml"
 
-		unmarshaller, err := CreateUnmarshaller(path)
+		unmarshaller, err := NewUnmarshaller(path)
 		assert.NoError(t, err)
 		assert.IsType(t, &tomlUnmarshaller{}, unmarshaller)
 	})
 
 	t.Run("YAML extension", func(t *testing.T) {
-		path := "/path/to/file.yaml"
+		path := "./testdata/test.yaml"
 
-		unmarshaller, err := CreateUnmarshaller(path)
+		unmarshaller, err := NewUnmarshaller(path)
 		assert.NoError(t, err)
 		assert.IsType(t, &yamlUnmarshaller{}, unmarshaller)
 	})
@@ -123,7 +123,7 @@ func TestCreateUnmarshaller(t *testing.T) {
 	t.Run("Unsupported extension", func(t *testing.T) {
 		path := "/path/to/file.txt"
 
-		unmarshaller, err := CreateUnmarshaller(path)
+		unmarshaller, err := NewUnmarshaller(path)
 		assert.Error(t, err)
 		assert.Nil(t, unmarshaller)
 	})

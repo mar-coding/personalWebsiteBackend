@@ -36,6 +36,7 @@ func New(middlewares ...grpc.UnaryServerInterceptor) grpc.ServerOption {
 	return grpc_middleware.WithUnaryServerChain(
 		middlewares...,
 	)
+
 }
 
 func GRPCLogging(logger logger.Logger) grpc.UnaryServerInterceptor {
