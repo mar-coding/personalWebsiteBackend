@@ -1,0 +1,70 @@
+syntax = "proto3";
+package components.microservice.v1;
+option go_package = "github.com/mar-coding/personalWebsiteBackend/APIs/proto-gen/components/microservice/v1;microservice";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
+
+extend google.protobuf.MethodOptions {
+  Permission permission = 1000000;
+}
+
+message Permission {
+  repeated Permissions permissions = 1;
+  bool optional = 2;
+  bool validate_permissions = 3;
+}
+
+enum Permissions {
+  NONE = 0;
+}
+
+service ServiceInfoService{
+  rpc SyncServiceInfo(ServiceInfo) returns (google.protobuf.Empty) {
+    option(permission) = {
+      permissions: NONE
+      optional: false
+      validate_permissions: false
+    };
+  }
+  rpc GetServicePermissions(GetServicePermissionsRequest) returns (ServiceInfo) {
+    option(permission) = {
+      permissions: NONE
+      optional: false
+      validate_permissions: false
+    };
+  }
+}
+
+message GetServicePermissionsRequest {
+  int32 service_code = 1;
+  string version = 2;
+}
+
+message ServiceInfo {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int32 code = 4;
+  string version = 5;
+  repeated ServicePermission permissions = 6;
+  ServiceConfig config = 7;
+  string application_id = 8;
+}
+
+message ServicePermission {
+  string name = 1;
+  string description = 2;
+  int32 code = 3;
+}
+
+message ServiceConfig {
+  repeated Template email_templates = 1;
+  repeated Template sms_templates = 2;
+}
+
+message Template {
+  int32 code = 1;
+  string template = 2;
+}

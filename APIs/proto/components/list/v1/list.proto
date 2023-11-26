@@ -1,0 +1,18 @@
+syntax = "proto3";
+package components.list.v1;
+option go_package = "github.com/mar-coding/personalWebsiteBackend/APIs/proto-gen/components/list/v1;list";
+
+message PaginatedListRequest {
+  map<string, string> filters = 1;
+  string sort = 2;
+  int32 page_no = 3;
+  int32 page_size = 4;
+}
+
+message PaginatedListResponse {
+  int32 page_no = 1;
+  int32 page_size = 2;
+  int64 total_items_count = 3;
+  string sort = 4;
+  map<string, string> filters = 5;
+}

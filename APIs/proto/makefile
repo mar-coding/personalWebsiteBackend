@@ -1,5 +1,13 @@
-simpleTest:
-	protoc --proto_path=services/website/v1 --go-grpc_out=. --go_out=. services/website/v1/*.proto
+errors:
+	protoc --proto_path=components --go_out=. components/errors/v1/errors.proto
+	$(MAKE) move-to-apis-gen
+
+microservice:
+	protoc --proto_path=components --proto_path=includes --go_out=. --go-grpc_out=. components/microservice/v1/*.proto
+	$(MAKE) move-to-apis-gen
+
+list:
+	protoc --proto_path=components --go_out=. --go-grpc_out=. components/list/v1/*.proto
 	$(MAKE) move-to-apis-gen
 
 website:

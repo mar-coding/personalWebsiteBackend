@@ -1,6 +1,6 @@
-package config
+package configHandler
 
-type Config[T any] struct {
+type BaseConfig[T any] struct {
 	Address        string        `yaml:"address" json:"address"`
 	Domain         string        `yaml:"domain" json:"domain"`
 	Origins        []string      `yaml:"origins" json:"origins"`

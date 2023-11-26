@@ -1,4 +1,4 @@
-package config
+package configHandler
 
 import (
 	"crypto/tls"
@@ -10,12 +10,12 @@ import (
 	"io/ioutil"
 )
 
-func New[Extra any](configPath string) (*Config[Extra], error) {
-	return newUnrmashal[Extra](configPath)
+func New[Extra any](configPath string) (*BaseConfig[Extra], error) {
+	return newUnmarshal[Extra](configPath)
 }
 
-func newUnrmashal[Extra any](configPath string) (*Config[Extra], error) {
-	cfg := new(Config[Extra])
+func newUnmarshal[Extra any](configPath string) (*BaseConfig[Extra], error) {
+	cfg := new(BaseConfig[Extra])
 
 	unmarshal, err := unmarshaller.NewUnmarshaller(configPath)
 	if err != nil {
@@ -26,7 +26,7 @@ func newUnrmashal[Extra any](configPath string) (*Config[Extra], error) {
 }
 
 // LoadGrpcServerCredentials create transport credential for grpc server for TLS handshake
-func (c *Config[T]) LoadGrpcServerCredentials() (credentials.TransportCredentials, error) {
+func (c *BaseConfig[T]) LoadGrpcServerCredentials() (credentials.TransportCredentials, error) {
 	// Load server's certificate and private key
 	serverCert, err := tls.LoadX509KeyPair(c.Grpc.CertFilePath, c.Grpc.CertKeyFilePath)
 	if err != nil {
@@ -43,7 +43,7 @@ func (c *Config[T]) LoadGrpcServerCredentials() (credentials.TransportCredential
 }
 
 // LoadGrpcClientCredentials create transport credential for grpc client to access server side for TLS handshake
-func (c *Config[T]) LoadGrpcClientCredentials(client *GrpcClient) (credentials.TransportCredentials, error) {
+func (c *BaseConfig[T]) LoadGrpcClientCredentials(client *GrpcClient) (credentials.TransportCredentials, error) {
 	if client == nil {
 		return nil, errors.New("service config: client is nil")
 	}
