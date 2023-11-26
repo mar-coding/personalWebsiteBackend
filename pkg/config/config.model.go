@@ -1,6 +1,6 @@
-package configs
+package config
 
-type Config struct {
+type Config[T any] struct {
 	Address        string        `yaml:"address" json:"address"`
 	Domain         string        `yaml:"domain" json:"domain"`
 	Origins        []string      `yaml:"origins" json:"origins"`
@@ -14,12 +14,7 @@ type Config struct {
 	Database       *Database     `yaml:"database" json:"database"`
 	Broker         *Broker       `yaml:"broker" json:"broker"`
 	Logging        *Logging      `yaml:"logging" json:"logging"`
-	Logger         *Logger       `yaml:"logger" json:"logger"` // Deprecated: Logger
-	ExtraData      ExtraData     `yaml:"extra_data" json:"extra_data"`
-}
-
-type ExtraData struct {
-	Email string `yaml:"email" json:"email"`
+	ExtraData      T             `yaml:"extra_data" json:"extra_data"`
 }
 
 type GRPC struct {
@@ -108,18 +103,6 @@ type Logging struct {
 	Handler      uint8  `yaml:"handler" json:"handler"` // Handler 0= console handler, 1= text handler, 2= json handler
 	EnableCaller bool   `yaml:"enable_caller" json:"enable_caller"`
 	SentryDSN    string `yaml:"sentry_dsn" json:"sentry_dsn"`
-}
-
-// Deprecated: Logger
-type Logger struct {
-	ConsoleWriter    bool         `yaml:"console_writer" json:"console_writer"`
-	ColorableConsole bool         `yaml:"colorable_console" json:"colorable_console"`
-	JsonWriter       bool         `yaml:"json_writer" json:"json_writer"`
-	JsonExtension    string       `yaml:"json_extension" json:"json_extension"`
-	FileWriter       bool         `yaml:"file_writer" json:"file_writer"`
-	LogPath          string       `yaml:"log_path" json:"log_path"`
-	FileRotation     *LogRotation `yaml:"file_rotation" json:"file_rotation"`
-	SentryDSN        string       `yaml:"sentry_dsn" json:"sentry_dsn"`
 }
 
 type LogRotation struct {

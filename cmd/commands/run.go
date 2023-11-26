@@ -20,6 +20,7 @@ var runCmd = &cobra.Command{
 		}
 
 		fmt.Println(cfg.ExtraData.Email)
+		fmt.Println(cfg.Address)
 
 		return nil
 	},

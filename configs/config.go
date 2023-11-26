@@ -1,24 +1,29 @@
 package configs
 
 import (
-	"fmt"
-	"github.com/mar-coding/personalWebsiteBackend/pkg/unmarshaller"
-	"os"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/config"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/errorHandler"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/serviceInfo"
+	"log"
 )
 
-func NewConfig(configPath string) (*Config, error) {
-	b, err := os.ReadFile(configPath)
+func NewConfig(configPath string) (*config.Config[ExtraData], error) {
+	cfg, err := config.New[ExtraData](configPath)
 	if err != nil {
-		msg := fmt.Errorf("failed to read config file in %s, got error %v", configPath, err)
-		return nil, msg
+		log.Fatal(err)
 	}
+	return cfg, err
+}
 
-	unMarshaler, err := unmarshaller.CreateUnmarshaller(configPath)
-	config := &Config{}
-	err = unMarshaler.Unmarshal(b, config)
-	if err != nil {
-		return nil, err
-	}
+func NewServiceInfo() (*serviceInfo.ServiceInfo, error) {
+	return serviceInfo.NewFromEmbed(serviceData)
+}
 
-	return config, nil
+func NewError(serviceInfo *serviceInfo.ServiceInfo, serviceConfig *config.Config[ExtraData]) (errorHandler.Handler, error) {
+	return errorHandler.NewError(
+		uint32(serviceInfo.Code),
+		serviceInfo.Name,
+		serviceInfo.Version,
+		serviceConfig.Domain,
+	)
 }
