@@ -2,14 +2,21 @@ package middlewares
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
-	grpc_tags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
+	"github.com/getsentry/sentry-go"
+	grpcZap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
+	grpcRecovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpcTags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/jhump/protoreflect/desc"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/acl"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/encryption"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/errorHandler"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/helper/languageLocalize"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/jwt"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/logger"
+	"github.com/mar-coding/personalWebsiteBackend/pkg/serviceInfo"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
@@ -18,7 +25,15 @@ import (
 	"google.golang.org/grpc/status"
 	"log/slog"
 	"strings"
+	"time"
 )
+
+const (
+	SESSION_COOKIE_KEY = "session_token"
+)
+
+// Deprecated: PermissionDescriptor get permissions and credentialType from descriptor, default validate is true in implementation
+type PermissionDescriptor func(ctx context.Context) ([]int32, bool, bool, bool)
 
 // PermissionFunc get permissions and credentialType from descriptor, default validate is true in implementation
 type PermissionFunc func(methodFullName string) ([]int32, bool, bool, bool, error)
@@ -33,10 +48,9 @@ type validatorLegacy interface {
 
 // New create chained middleware for grpc
 func New(middlewares ...grpc.UnaryServerInterceptor) grpc.ServerOption {
-	return grpc_middleware.WithUnaryServerChain(
+	return grpc.ChainUnaryInterceptor(
 		middlewares...,
 	)
-
 }
 
 func GRPCLogging(logger logger.Logger) grpc.UnaryServerInterceptor {
@@ -52,15 +66,6 @@ func GRPCLogging(logger logger.Logger) grpc.UnaryServerInterceptor {
 	return logging.UnaryServerInterceptor(logFunc, opts...)
 }
 
-// Deprecated: MethodDescriptors save methods descriptors into context for any methods, please check middleware GrpcJwtMiddleware
-func MethodDescriptors(descriptors map[string]*desc.MethodDescriptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		md := descriptors[info.FullMethod]
-		ctx = metadata.AppendToOutgoingContext(context.WithValue(ctx, "desc", md))
-		return handler(ctx, req)
-	}
-}
-
 // GrpcRecovery recovery panics
 func GrpcRecovery(logger logger.Logger) grpc.UnaryServerInterceptor {
 	rec := func(p interface{}) (err error) {
@@ -68,14 +73,14 @@ func GrpcRecovery(logger logger.Logger) grpc.UnaryServerInterceptor {
 		logger.Error(true, "recovery: panic triggered", "error", err)
 		return
 	}
-	opts := []grpc_recovery.Option{
-		grpc_recovery.WithRecoveryHandler(rec),
+	opts := []grpcRecovery.Option{
+		grpcRecovery.WithRecoveryHandler(rec),
 	}
-	return grpc_recovery.UnaryServerInterceptor(opts...)
+	return grpcRecovery.UnaryServerInterceptor(opts...)
 }
 
 // GrpcValidator validate your message fields, for user validator please check https://github.com/envoyproxy/protoc-gen-validate
-func GrpcValidator(errHandler errHandler.Handler) grpc.UnaryServerInterceptor {
+func GrpcValidator(errHandler errorHandler.Handler) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		switch in := req.(type) {
 		case validator:
@@ -91,44 +96,8 @@ func GrpcValidator(errHandler errHandler.Handler) grpc.UnaryServerInterceptor {
 	}
 }
 
-// Deprecated: GrpcJwt middleware for check jwt, please use GrpcJwtMiddleware
-func GrpcJwt(permissionDescriptor PermissionDescriptor, serviceInfo *info.ServiceInfo, errHandler errHandler.Handler, jwtPublicSecret, jwtPrivateSecret, captchaSecretKey string) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		permissions, optional, validate, captcha := permissionDescriptor(ctx)
-
-		if captcha && len(captchaSecretKey) != 0 {
-			if err := googleCaptchaValidation(ctx, captchaSecretKey, errHandler); err != nil {
-				return nil, err
-			}
-		}
-
-		if isPermissionZero(permissions) && !optional {
-			return handler(ctx, req)
-		}
-
-		if optional {
-			_, err = acl.GetBearerTokenFromGrpcContext(ctx)
-			if err == nil {
-				aclController, err := notOptionalAclContext(ctx, serviceInfo, errHandler, jwtPublicSecret, jwtPrivateSecret, validate, optional, permissions)
-				if err != nil {
-					return nil, err
-				}
-				return handler(aclController.SetAclToContext(ctx), req)
-			}
-
-			return handler(ctx, req)
-		}
-
-		aclController, err := notOptionalAclContext(ctx, serviceInfo, errHandler, jwtPublicSecret, jwtPrivateSecret, validate, optional, permissions)
-		if err != nil {
-			return nil, err
-		}
-		return handler(aclController.SetAclToContext(ctx), req)
-	}
-}
-
 // GrpcJwtMiddleware middleware for check jwt token
-func GrpcJwtMiddleware(permissionDescriptor PermissionFunc, serviceInfo *info.ServiceInfo, errHandler errHandler.Handler, jwtPublicSecret, jwtPrivateSecret, captchaSecretKey string) grpc.UnaryServerInterceptor {
+func GrpcJwtMiddleware(permissionDescriptor PermissionFunc, serviceInfo *serviceInfo.ServiceInfo, errHandler errorHandler.Handler, jwtPublicSecret, jwtPrivateSecret, captchaSecretKey string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		permissions, optional, validate, captcha, err := permissionDescriptor(strings.Replace(info.FullMethod[1:], "/", ".", -1))
 		if err != nil {
@@ -166,7 +135,48 @@ func GrpcJwtMiddleware(permissionDescriptor PermissionFunc, serviceInfo *info.Se
 	}
 }
 
-func notOptionalAclContext(ctx context.Context, serviceInfo *info.ServiceInfo, errHandler errHandler.Handler, jwtPublicSecret, jwtPrivateSecret string, validate, optional bool, permissions []int32) (*acl.AclJwt, error) {
+// GrpcSessionMiddleware middleware for check session expire time
+func GrpcSessionMiddleware(permissionDescriptor PermissionFunc, errHandler errorHandler.Handler, sessionPrivateKey string) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+		permissions, _, _, _, err := permissionDescriptor(strings.Replace(info.FullMethod[1:], "/", ".", -1))
+		if err != nil {
+			return nil, err
+		}
+
+		if isPermissionZero(permissions) {
+			return handler(ctx, req)
+		}
+
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, err
+		}
+
+		sessionToken := md.Get(SESSION_COOKIE_KEY)
+		if len(sessionToken) == 0 {
+			return nil, errHandler.New(codes.Unauthenticated, nil, "session_token cookie not found in request")
+		}
+
+		sessionByte, err := base64.StdEncoding.DecodeString(sessionToken[0])
+		if err != nil {
+			return nil, errHandler.New(codes.Unauthenticated, nil, "session_token is invalid")
+		}
+
+		aesEncryption, err := encryption.NewAES[int64](sessionPrivateKey)
+		expTimeInt, err := aesEncryption.Decrypt(sessionByte)
+		if err != nil {
+			return nil, errHandler.New(codes.Unauthenticated, nil, "session_token is invalid")
+		}
+
+		if time.UnixMicro(expTimeInt).Before(time.Now()) {
+			return nil, errHandler.New(codes.Unauthenticated, nil, "token has been expired")
+		}
+
+		return handler(ctx, req)
+	}
+}
+
+func notOptionalAclContext(ctx context.Context, serviceInfo *serviceInfo.ServiceInfo, errHandler errorHandler.Handler, jwtPublicSecret, jwtPrivateSecret string, validate, optional bool, permissions []int32) (*acl.JwtController, error) {
 	jwtToken, err := acl.GetBearerTokenFromGrpcContext(ctx)
 	if err != nil {
 		if errors.Is(err, acl.ErrNotFoundJwtTokenInHeader) {
@@ -218,7 +228,7 @@ func GrpcSentryPerformance(client *sentry.Client, opts ...Option) grpc.UnaryServ
 		ctx = sentry.SetHubOnContext(ctx, hub)
 
 		md, _ := metadata.FromIncomingContext(ctx) // nil check in continueFromGrpcMetadata
-		span := sentry.StartSpan(ctx, "grpc.server", continueFromGrpcMetadata(md), sentry.TransactionName(info.FullMethod))
+		span := sentry.StartSpan(ctx, "grpc.server", continueFromGrpcMetadata(md), sentry.WithTransactionName(info.FullMethod))
 		ctx = span.Context()
 		defer span.Finish()
 
@@ -231,7 +241,7 @@ func GrpcSentryPerformance(client *sentry.Client, opts ...Option) grpc.UnaryServ
 
 		resp, err := handler(ctx, req)
 		if err != nil && o.ReportOn(err) {
-			tags := grpc_tags.Extract(ctx)
+			tags := grpcTags.Extract(ctx)
 			for k, v := range tags.Values() {
 				hub.Scope().SetTag(k, v.(string))
 			}
@@ -243,8 +253,8 @@ func GrpcSentryPerformance(client *sentry.Client, opts ...Option) grpc.UnaryServ
 	}
 }
 
-// GrpcLocalizer create localizer base on request language for multilingual
-func GrpcLocalizer(bundle *i18n.I18n) grpc.UnaryServerInterceptor {
+// GrpcLocalize create localize base on request language for multilingual
+func GrpcLocalize(bundle *languageLocalize.I18n) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		lang := "en"
 
@@ -252,7 +262,7 @@ func GrpcLocalizer(bundle *i18n.I18n) grpc.UnaryServerInterceptor {
 			lang = bundle.GetLanguageFromMD(md)
 		}
 
-		ctx = context.WithValue(ctx, "localizer", bundle.GetLocalizer(lang))
+		ctx = context.WithValue(ctx, "localize", bundle.GetLocalize(lang))
 
 		return handler(ctx, req)
 	}
@@ -262,7 +272,7 @@ func zapLevel(code codes.Code) zapcore.Level {
 	if code == codes.OK {
 		return zap.DebugLevel
 	}
-	return grpc_zap.DefaultCodeToLevel(code)
+	return grpcZap.DefaultCodeToLevel(code)
 }
 
 func isPermissionZero(permissions []int32) bool {

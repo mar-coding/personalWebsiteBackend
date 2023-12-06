@@ -13,12 +13,6 @@ type GRPCBootstrapper interface {
 	GetGRPCServer() *grpc.Server
 }
 
-type GRPCServer struct {
-	server   *grpc.Server
-	listener net.Listener
-	notify   chan error
-}
-
 // NewGRPCServer create grpc server transport
 func NewGRPCServer(
 	grpcAddress string,
