@@ -8,7 +8,6 @@ import (
 	"github.com/mar-coding/personalWebsiteBackend/pkg/configHandler"
 	"github.com/mar-coding/personalWebsiteBackend/pkg/errorHandler"
 	"github.com/mar-coding/personalWebsiteBackend/pkg/logger"
-	config "github.com/mar-coding/personalWebsiteBackend/pkg/middlewares/testdata"
 	"github.com/mar-coding/personalWebsiteBackend/pkg/mongodb"
 	"github.com/mar-coding/personalWebsiteBackend/pkg/serviceInfo"
 	"github.com/mar-coding/personalWebsiteBackend/pkg/transport"
@@ -19,7 +18,7 @@ type AppBootstrapper interface {
 	Migration(ctx context.Context) error
 	Shutdown(ctx context.Context) error
 	GetServiceInfo() *microservice.ServiceInfo
-	GetServiceConfig() *configHandler.BaseConfig[config.ExtraData]
+	GetServiceConfig() *configHandler.BaseConfig[configs.ExtraData]
 	GetMongodbConnector() mongodb.Connector
 	GetErrorHandler() errorHandler.Handler
 }
@@ -29,7 +28,7 @@ type Application struct {
 	httpServer transport.HTTPBootstrapper
 
 	serviceInfo      *microservice.ServiceInfo
-	serviceConfig    *configHandler.BaseConfig[config.ExtraData]
+	serviceConfig    *configHandler.BaseConfig[configs.ExtraData]
 	mongodbConnector mongodb.Connector
 	logger           logger.Logger
 	error            errorHandler.Handler
